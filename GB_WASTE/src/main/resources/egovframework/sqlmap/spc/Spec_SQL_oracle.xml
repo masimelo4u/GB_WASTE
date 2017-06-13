@@ -1,0 +1,195 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://www.ibatis.com/dtd/sql-map-2.dtd">
+
+<sqlMap namespace="Spec">
+	<typeAlias  alias="egovMap" type="egovframework.rte.psl.dataaccess.util.EgovMap"/>
+	<typeAlias  alias="searchVO" type="egovframework.WASTE.cmmn.service.SearchVO"/>
+	<typeAlias  alias="specVO" type="egovframework.WASTE.spc.service.SpecVO"/>
+	
+	<select id="specDAO.selectPopSpecList" parameterClass="specVO" resultClass="egovMap">
+		SELECT
+			SPC.WASTE_SPEC_NO,
+			SPC.SORT_CD,
+			SPC.SORT_NM,
+			SPC.ITEM,
+			SPC.SPEC,
+			TO_CHAR(SPC.PRICE, 'FM999,999,999,999,999') AS PRICE
+		FROM
+			WASTE.WASTE_SPEC SPC
+		WHERE
+			1 = 1
+			AND SPC.USE_YN = 1
+		ORDER BY
+			SPC.ITEM
+	</select>
+	
+	<select id="specDAO.selectSpecList" parameterClass="specVO" resultClass="egovMap">
+		SELECT
+			*
+		FROM
+			(
+				SELECT
+					ROWNUM RNUM,
+					S.*
+				FROM
+					(
+						SELECT
+							SPC.WASTE_SPEC_NO,
+							SPC.SORT_CD,
+							SPC.SORT_NM,
+							SPC.ITEM,
+							SPC.SPEC,
+							TO_CHAR( SPC.PRICE, 'FM999,999,999,999,999' ) AS PRICE,
+							DECODE(SPC.USE_YN, '1', '사용', '2', '미사용') AS USE_YN
+						FROM
+							WASTE.WASTE_SPEC SPC
+						WHERE
+							1 = 1
+						<isNotEmpty prepend="AND" property="sortCd">
+							SPC.SORT_CD = #sortCd#
+						</isNotEmpty>
+						<isNotEmpty prepend="AND" property="item">
+							SPC.ITEM LIKE '%'||#item#||'%'
+						</isNotEmpty>
+						<isNotEmpty prepend="AND" property="useYn">
+							SPC.USE_YN LIKE '%'||#useYn#||'%'
+						</isNotEmpty>
+						ORDER BY
+							SPC.WASTE_SPEC_NO DESC
+					) S
+			) A
+		<![CDATA[ WHERE ROWNUM <= #recordCountPerPage# and RNUM > #firstIndex# ]]>
+	</select>
+	
+	<select id="specDAO.selectSpecListTotCnt" parameterClass="specVO" resultClass="int">
+		SELECT
+			COUNT(*) TOTCNT
+		FROM
+			(
+				SELECT
+					ROWNUM RNUM,
+					S.*
+				FROM
+					(
+						SELECT
+							SPC.WASTE_SPEC_NO,
+							SPC.SORT_CD,
+							SPC.SORT_NM,
+							SPC.ITEM,
+							SPC.SPEC,
+							TO_CHAR( SPC.PRICE, 'FM999,999,999,999,999' ) AS PRICE,
+							DECODE(SPC.USE_YN, '1', '사용', '2', '미사용') AS USE_YN
+						FROM
+							WASTE.WASTE_SPEC SPC
+						WHERE
+							1 = 1
+						<isNotEmpty prepend="AND" property="sortCd">
+							SPC.SORT_CD = #sortCd#
+						</isNotEmpty>
+						<isNotEmpty prepend="AND" property="item">
+							SPC.ITEM LIKE '%'||#item#||'%'
+						</isNotEmpty>
+						<isNotEmpty prepend="AND" property="useYn">
+							SPC.USE_YN LIKE '%'||#useYn#||'%'
+						</isNotEmpty>
+						ORDER BY
+							SPC.WASTE_SPEC_NO DESC
+					) S
+			) A
+	</select>
+	
+	<insert id="specDAO.insertSpecApply">
+		<![CDATA[
+			INSERT
+				INTO
+					WASTE.WASTE_SPEC(
+						WASTE_SPEC_NO,
+						SORT_CD,
+						SORT_NM,
+						ITEM,
+						SPEC,
+						PRICE,
+						USE_YN,
+						CREATER,
+						CREATION_DATE,
+						UPDATER,
+						UPDATE_DATE
+					)
+				VALUES(
+					#wasteSpecNo#,
+					#sortCd#,
+					#sortNm#,
+					#item#,
+					#spec#,
+					#price#,
+					#useYn#,
+					#creater#,
+					SYSDATE,
+					#updater#,
+					SYSDATE
+				)
+		]]>
+	</insert>
+	
+	<select id="specDAO.selectSpecApplyNo" parameterClass="specVO" resultClass="int">
+		<![CDATA[
+			SELECT
+				MAX( WASTE_SPEC_NO )+1 AS WASTE_SPEC_NO
+			FROM
+				WASTE.WASTE_SPEC
+		]]>
+	</select>
+	
+	<resultMap id="SpecMap" class="specVO" >
+		<result property="wasteSpecNo" column="WASTE_SPEC_NO" />
+		<result property="sortCd" column="SORT_CD" />
+		<result property="sortNm" column="SORT_NM" />
+		<result property="item" column="ITEM" />
+		<result property="spec" column="SPEC" />
+		<result property="price" column="PRICE" />
+		<result property="useYn" column="USE_YN" />
+	</resultMap>
+	
+	<select id="specDAO.selectSpecView" parameterClass="specVO" resultMap="SpecMap">
+		<![CDATA[
+			SELECT
+				WASTE_SPEC_NO,
+				SORT_CD,
+				SORT_NM,
+				ITEM,
+				SPEC,
+				PRICE,
+				USE_YN
+			FROM
+				WASTE.WASTE_SPEC
+			WHERE
+				WASTE_SPEC_NO = #wasteSpecNo#
+		]]>
+	</select>
+	
+	<update id="specDAO.updateSpecApply" parameterClass="specVO">
+		UPDATE
+			WASTE.WASTE_SPEC
+		SET
+			SORT_CD = #sortCd#,
+			SORT_NM = #sortNm#,
+			ITEM = #item#,
+			SPEC = #spec#,
+			PRICE = #price#,
+			USE_YN = #useYn#,
+			UPDATE_DATE = SYSDATE
+		WHERE 
+			WASTE_SPEC_NO = #wasteSpecNo#			
+	</update>
+	
+	<delete id="specDAO.deleteSpecApply">
+		<![CDATA[
+		DELETE
+		FROM
+			WASTE.WASTE_SPEC
+		WHERE
+			WASTE_SPEC_NO = #wasteSpecNo#
+		]]>
+	</delete>
+	
+</sqlMap>

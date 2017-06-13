@@ -1,0 +1,149 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://www.ibatis.com/dtd/sql-map-2.dtd">
+
+<sqlMap namespace="Manager">
+
+	<typeAlias  alias="egovMap" type="egovframework.rte.psl.dataaccess.util.EgovMap"/>
+	<typeAlias  alias="searchVO" type="egovframework.WASTE.cmmn.service.SearchVO"/>
+	<typeAlias  alias="managerDtlVO" type="egovframework.WASTE.mng.service.ManagerDtlVO"/>
+
+	<!-- <resultMap id="manager" class="egovframework.WASTE.mng.service.WasteMngVO">
+		<result property="managerId" column="managerId"/>
+		<result property="managerNm" column="managerNm"/>
+		<result property="telephone" column="telephone"/>
+		<result property="mobile" column="mobile"/>
+		<result property="managerType" column="managerType"/>
+		<result property="creater" column="creater"/>
+		<result property="creationDate" column="creationDate"/>
+		<result property="updater" column="updater"/>
+		<result property="updateDate" column="updateDate"/>
+	</resultMap> -->
+	
+	<select id="managerDAO.selectManagerList" parameterClass="searchVO" resultClass="egovMap">
+			SELECT 
+				A.WASTE_MNG_NO,
+				A.MANAGER_ID,
+				A.MANAGER_NM,
+				A.TELEPHONE,
+				A.MOBILE,
+				DECODE(A.MANAGER_TYPE, 'T', '탑관리자', 'S', '서브관리자') AS MANAGER_TYPE,
+				TO_CHAR(A.LAST_LOGIN, 'YYYY-MM-DD') AS LAST_LOGIN
+			FROM (	
+				SELECT ROWNUM RNUM, S.*
+				FROM (
+					SELECT
+						WASTE_MNG_NO,
+						MANAGER_ID,
+						MANAGER_NM,
+						PASSWORD,
+						TELEPHONE,
+						MOBILE,
+						MANAGER_TYPE,
+						CREATER,
+						CREATION_DATE,
+						UPDATER,
+						UPDATE_DATE,
+						LAST_LOGIN,
+						ROWNUM
+					FROM
+						WASTE_MNG
+					WHERE 1=1
+					ORDER BY 
+						WASTE_MNG_NO DESC
+				) S
+			) A
+<!-- 		<![CDATA[ WHERE ROWNUM <= #recordCountPerPage# and RNUM > #firstIndex# ]]> -->
+	</select>
+	
+	<select id="managerDAO.selectManagerDtlList" parameterClass="managerDtlVO" resultClass="egovMap">
+			SELECT
+				HJDONG_NM
+			FROM
+				WASTE_MNG_DTL
+			WHERE
+				MANAGER_ID = #managerId#
+	</select>
+	
+	<select id="managerDAO.selectManagerListTotCnt" parameterClass="searchVO" resultClass="int">
+			SELECT COUNT(*) TOTCNT
+			FROM WASTE_MNG
+	</select>
+
+	<!-- <insert id="sampleDAO.insertSample_S">
+		<![CDATA[
+			INSERT INTO SAMPLE 
+				( ID
+				  , NAME
+				  , DESCRIPTION
+				  , USE_YN
+				  , REG_USER )
+			VALUES ( #id#
+				  , #name#
+				  , #description#
+				  , #useYn#
+				  , #regUser# )
+		]]>
+	</insert>
+	
+	<update id="sampleDAO.updateSample_S">
+		<![CDATA[
+			UPDATE SAMPLE 
+			SET ID=#id#
+				, NAME=#name#
+				, DESCRIPTION=#description#
+				, USE_YN=#useYn#
+			WHERE ID=#id#
+		]]>
+	</update>
+	
+	<delete id="sampleDAO.deleteSample_S">
+		<![CDATA[
+			DELETE FROM SAMPLE 
+			WHERE ID=#id#
+		]]>
+	</delete>
+	
+	<select id="sampleDAO.selectSample_S" resultMap="sample">
+		<![CDATA[
+			SELECT
+				ID, NAME, DESCRIPTION, USE_YN, REG_USER
+			FROM SAMPLE 
+			WHERE ID=#id#
+		]]>
+	</select>
+	
+	<select id="sampleDAO.selectSampleList_D" parameterClass="searchVO" resultClass="egovMap">
+	       SELECT A.ID, A.NAME, A.DESCRIPTION, A.USE_YN, A.REG_USER
+	       FROM (
+		       SELECT  ROWNUM RNUM, S.*
+			   FROM (
+					SELECT
+						ID, NAME, DESCRIPTION, USE_YN, REG_USER, ROWNUM
+					FROM SAMPLE
+					WHERE 1=1
+					<isEqual prepend="AND" property="searchCondition" compareValue="0">
+						ID = #searchKeyword#
+					</isEqual>
+					<isEqual prepend="AND" property="searchCondition" compareValue="1">
+						NAME LIKE '%' || #searchKeyword# || '%'
+					</isEqual>
+					ORDER BY ID DESC
+				) S
+			 ) A
+		<![CDATA[ WHERE ROWNUM <= #recordCountPerPage# and RNUM > #firstIndex# ]]>
+	</select>
+	
+	<select id="sampleDAO.selectSampleListTotCnt_S" parameterClass="searchVO" resultClass="int">
+
+			SELECT COUNT(*) totcnt
+			FROM SAMPLE
+			WHERE 1=1
+			<isEqual prepend="AND" property="searchCondition" compareValue="0">
+				ID = #searchKeyword#
+			</isEqual>
+			<isEqual prepend="AND" property="searchCondition" compareValue="1">
+				NAME LIKE '%' || #searchKeyword# || '%'
+			</isEqual>
+	</select> -->
+
+</sqlMap>

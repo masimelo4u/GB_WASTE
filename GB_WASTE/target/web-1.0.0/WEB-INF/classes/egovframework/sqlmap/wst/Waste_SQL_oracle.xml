@@ -1,0 +1,237 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://www.ibatis.com/dtd/sql-map-2.dtd">
+
+<sqlMap namespace="Waste">
+	<typeAlias  alias="egovMap" type="egovframework.rte.psl.dataaccess.util.EgovMap"/>
+	<typeAlias  alias="searchVO" type="egovframework.WASTE.cmmn.service.SearchVO"/>
+	<typeAlias  alias="wasteVO" type="egovframework.WASTE.wst.service.WasteVO"/>
+	<typeAlias  alias="wasteDtlVO" type="egovframework.WASTE.wst.service.WasteDtlVO"/>
+	
+	<select id="wasteDAO.selectWasteList" parameterClass="wasteVO" resultClass="egovMap">
+		SELECT
+			*
+		FROM
+			(
+				SELECT
+					ROWNUM RNUM,
+					S.*
+				FROM
+					(
+						SELECT
+							WASTE_APPLY_NO,
+							OID,
+							REQUEST_NM,
+							REQ_EMAIL,
+							REQ_TELEPHONE,
+							REQ_MOBILE,
+							REQ_POST,
+							REQ_ADDR,
+							REQ_NEW_ADDR,
+							REQ_BJDONG,
+							REQ_BUNJI,
+							REQ_HJDONG,
+							ACCOUNT_NM,
+							ACC_EMAIL,
+							ACC_TELEPHONE,
+							ACC_MOBILE,
+							ACC_POST,
+							ACC_ADDR,
+							ACC_NEW_ADDR,
+							ACC_BJDONG,
+							ACC_BUNJI,
+							ACC_HJDONG,
+							DECODE(PAY_TYPE, 'card', '카드', 'other', '방문') AS PAY_TYPE,
+							TO_CHAR(PRICE, 'FM999,999,999,999,999') AS PRICE,
+							DETAIL,
+							"TRANSACTION",
+							DECODE(PAY_STATUS, 'Y', '결제', 'N', '미결제') AS PAY_STATUS,
+							DISCHARGE_DATE,
+							DECODE(COLLECT_DATE, NULL, '미수거') AS COLLECT_DATE,
+							SHOW_RECORD,
+							SERIAL_NO,
+							MANAGER_ID,
+							USER_IP,
+							CREATER,
+							TO_CHAR(CREATION_DATE, 'YYYY-MM-DD') AS CREATION_DATE,
+							UPDATER,
+							UPDATE_DATE,
+							ROWNUM
+						FROM
+							WASTE_APPLY
+						WHERE 1=1
+						<isNotEmpty prepend="AND" property="collectDate">
+							<isEqual property="collectDate" compareValue="Y">  
+								COLLECT_DATE IS NOT NULL
+							</isEqual>
+							<isEqual property="collectDate" compareValue="N">  
+								COLLECT_DATE IS NULL
+							</isEqual>
+						</isNotEmpty>
+						<isNotEmpty prepend="AND" property="payStatus">
+							PAY_STATUS = #payStatus#
+						</isNotEmpty>
+						<isNotEmpty prepend="AND" property="reqHjdong">
+							REQ_HJDONG = #reqHjdong#
+						</isNotEmpty>
+						<isNotEmpty prepend="AND" property="cDateF">
+							TO_CHAR(CREATION_DATE, 'YYYYMMDD') BETWEEN #cDateF# AND #cDateT#
+						</isNotEmpty>
+						AND ROWNUM < 100
+					) S
+				ORDER BY
+					RNUM DESC
+			) A
+	</select>
+	
+	<select id="wasteDAO.selectWasteListTotCnt" parameterClass="searchVO" resultClass="int">
+		SELECT
+			COUNT(0)
+		FROM
+			(
+				SELECT
+					ROWNUM RNUM,
+					S.*
+				FROM
+					(
+						SELECT
+							WASTE_APPLY_NO,
+							OID,
+							REQUEST_NM,
+							REQ_EMAIL,
+							REQ_TELEPHONE,
+							REQ_MOBILE,
+							REQ_POST,
+							REQ_ADDR,
+							REQ_NEW_ADDR,
+							REQ_BJDONG,
+							REQ_BUNJI,
+							REQ_HJDONG,
+							ACCOUNT_NM,
+							ACC_EMAIL,
+							ACC_TELEPHONE,
+							ACC_MOBILE,
+							ACC_POST,
+							ACC_ADDR,
+							ACC_NEW_ADDR,
+							ACC_BJDONG,
+							ACC_BUNJI,
+							ACC_HJDONG,
+							DECODE(PAY_TYPE, 'card', '카드', 'other', '방문') AS PAY_TYPE,
+							TO_CHAR(PRICE, 'FM999,999,999,999,999') AS PRICE,
+							DETAIL,
+							"TRANSACTION",
+							DECODE(PAY_STATUS, 'Y', '결제', 'N', '미결제') AS PAY_STATUS,
+							DISCHARGE_DATE,
+							DECODE(COLLECT_DATE, NULL, '미수거') AS COLLECT_DATE,
+							SHOW_RECORD,
+							SERIAL_NO,
+							MANAGER_ID,
+							USER_IP,
+							CREATER,
+							TO_CHAR(CREATION_DATE, 'YYYY-MM-DD') AS CREATION_DATE,
+							UPDATER,
+							UPDATE_DATE,
+							ROWNUM
+						FROM
+							WASTE_APPLY
+						WHERE 1=1
+						AND PAY_STATUS = 'Y'
+						AND TO_CHAR(CREATION_DATE, 'YYYYMMDD') BETWEEN '20170405' AND '20170405'
+					) S
+				ORDER BY
+					RNUM DESC
+			) A
+	</select>
+	
+	<!-- <select id="managerDAO.selectManagerDtlList" parameterClass="managerDtlVO" resultClass="egovMap">
+			SELECT
+				HJDONG_NM
+			FROM
+				WASTE_MNG_DTL
+			WHERE
+				MANAGER_ID = #managerId#
+	</select> -->
+	
+	<!-- <select id="managerDAO.selectManagerListTotCnt" parameterClass="searchVO" resultClass="int">
+			SELECT COUNT(*) TOTCNT
+			FROM WASTE_MNG
+	</select> -->
+
+	<!-- <insert id="sampleDAO.insertSample_S">
+		<![CDATA[
+			INSERT INTO SAMPLE 
+				( ID
+				  , NAME
+				  , DESCRIPTION
+				  , USE_YN
+				  , REG_USER )
+			VALUES ( #id#
+				  , #name#
+				  , #description#
+				  , #useYn#
+				  , #regUser# )
+		]]>
+	</insert>
+	
+	<update id="sampleDAO.updateSample_S">
+		<![CDATA[
+			UPDATE SAMPLE 
+			SET ID=#id#
+				, NAME=#name#
+				, DESCRIPTION=#description#
+				, USE_YN=#useYn#
+			WHERE ID=#id#
+		]]>
+	</update>
+	
+	<delete id="sampleDAO.deleteSample_S">
+		<![CDATA[
+			DELETE FROM SAMPLE 
+			WHERE ID=#id#
+		]]>
+	</delete>
+	
+	<select id="sampleDAO.selectSample_S" resultMap="sample">
+		<![CDATA[
+			SELECT
+				ID, NAME, DESCRIPTION, USE_YN, REG_USER
+			FROM SAMPLE 
+			WHERE ID=#id#
+		]]>
+	</select>
+	
+	<select id="sampleDAO.selectSampleList_D" parameterClass="searchVO" resultClass="egovMap">
+	       SELECT A.ID, A.NAME, A.DESCRIPTION, A.USE_YN, A.REG_USER
+	       FROM (
+		       SELECT  ROWNUM RNUM, S.*
+			   FROM (
+					SELECT
+						ID, NAME, DESCRIPTION, USE_YN, REG_USER, ROWNUM
+					FROM SAMPLE
+					WHERE 1=1
+					<isEqual prepend="AND" property="searchCondition" compareValue="0">
+						ID = #searchKeyword#
+					</isEqual>
+					<isEqual prepend="AND" property="searchCondition" compareValue="1">
+						NAME LIKE '%' || #searchKeyword# || '%'
+					</isEqual>
+					ORDER BY ID DESC
+				) S
+			 ) A
+		<![CDATA[ WHERE ROWNUM <= #recordCountPerPage# and RNUM > #firstIndex# ]]>
+	</select>
+	
+	<select id="sampleDAO.selectSampleListTotCnt_S" parameterClass="searchVO" resultClass="int">
+
+			SELECT COUNT(*) totcnt
+			FROM SAMPLE
+			WHERE 1=1
+			<isEqual prepend="AND" property="searchCondition" compareValue="0">
+				ID = #searchKeyword#
+			</isEqual>
+			<isEqual prepend="AND" property="searchCondition" compareValue="1">
+				NAME LIKE '%' || #searchKeyword# || '%'
+			</isEqual>
+	</select> -->
+
+</sqlMap>

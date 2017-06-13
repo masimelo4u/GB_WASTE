@@ -1,0 +1,266 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://www.ibatis.com/dtd/sql-map-2.dtd">
+
+<sqlMap namespace="Manager">
+
+	<typeAlias  alias="egovMap" type="egovframework.rte.psl.dataaccess.util.EgovMap"/>
+	<typeAlias  alias="searchVO" type="egovframework.WASTE.cmmn.service.SearchVO"/>
+	<typeAlias  alias="managerVO" type="egovframework.WASTE.mng.service.ManagerVO"/>
+	<typeAlias  alias="managerDtlVO" type="egovframework.WASTE.mng.service.ManagerDtlVO"/>
+
+	<select id="managerDAO.selectMngList" parameterClass="managerVO" resultClass="egovMap">
+		SELECT
+			*
+		FROM
+			(
+				SELECT
+					ROWNUM RNUM,
+					S.*,
+					(
+						SELECT
+							LISTAGG(
+								HJDONG_NM,
+								','
+							) WITHIN GROUP(
+							ORDER BY
+								WASTE_MNG_DTL_NO
+							)
+						FROM
+							WASTE.WASTE_MNG_DTL
+						WHERE
+							MANAGER_ID = S.MANAGER_ID
+					) AS ITEM
+				FROM
+					(
+						SELECT
+							WASTE_MNG_NO,
+							MANAGER_ID,
+							MANAGER_NM,
+							TELEPHONE,
+							MOBILE,
+							DECODE(MNG.MANAGER_TYPE, 'T', '최고관리자', 'S', '서브관리자') AS MANAGER_TYPE,
+							CREATER,
+							CREATION_DATE,
+							UPDATER,
+							UPDATE_DATE,	
+							TO_CHAR(LAST_LOGIN, 'YYYY-MM-DD HH24:MI:SS') LAST_LOGIN
+						FROM
+							WASTE.WASTE_MNG MNG
+						WHERE
+							1 = 1
+						<isEqual prepend="AND" property="searchCondition" compareValue="managerId">
+							MNG.MANAGER_ID LIKE '%'||#searchKeyword#||'%'
+						</isEqual>
+						<isEqual prepend="AND" property="searchCondition" compareValue="managerNm">
+							MNG.MANAGER_NM LIKE '%'||#searchKeyword#||'%'
+						</isEqual>
+						ORDER BY
+							MNG.WASTE_MNG_NO DESC
+					) S
+			) A
+		<![CDATA[ WHERE ROWNUM <= #recordCountPerPage# and RNUM > #firstIndex# ]]>
+	</select>
+	
+	<select id="managerDAO.selectMngListTotCnt" parameterClass="searchVO" resultClass="int">
+		<![CDATA[
+		SELECT
+			COUNT(*) TOTCNT
+		FROM
+			(
+				SELECT
+					ROWNUM RNUM,
+					S.*
+				FROM
+					(
+						SELECT
+							WASTE_MNG_NO,
+							MANAGER_ID,
+							MANAGER_NM,
+							TELEPHONE,
+							MOBILE,
+							DECODE(MNG.MANAGER_TYPE, 'T', '최고관리자', 'S', '서브관리자') AS MANAGER_TYPE,
+							CREATER,
+							CREATION_DATE,
+							UPDATER,
+							UPDATE_DATE,	
+							LAST_LOGIN
+						FROM
+							WASTE.WASTE_MNG MNG
+						ORDER BY
+							MNG.WASTE_MNG_NO DESC
+					) S
+			) A
+		]]>
+	</select>
+	
+	<select id="managerDAO.selectMngNo" parameterClass="managerVO" resultClass="int">
+		<![CDATA[
+			SELECT
+				MAX( WASTE_MNG_NO )+1 AS WASTE_MNG_NO
+			FROM
+				WASTE.WASTE_MNG
+		]]>
+	</select>
+	
+	<select id="managerDAO.selectMngDtlNo" parameterClass="managerDtlVO" resultClass="int">
+		<![CDATA[
+			SELECT
+				MAX( WASTE_MNG_DTL_NO )+1 AS WASTE_MNG_DTL_NO
+			FROM
+				WASTE.WASTE_MNG_DTL
+		]]>
+	</select>
+	
+	<insert id="managerDAO.insertMngApply">
+		<![CDATA[
+			INSERT
+				INTO
+					WASTE.WASTE_MNG(
+						WASTE_MNG_NO,
+						MANAGER_ID,
+						MANAGER_NM,
+						PASSWORD,
+						TELEPHONE,
+						MOBILE,
+						MANAGER_TYPE,
+						CREATER,
+						CREATION_DATE,
+						UPDATER,
+						UPDATE_DATE,
+						LAST_LOGIN
+					)
+				VALUES(
+					#wasteMngNo#,
+					#managerId#,
+					#managerNm#,
+					#password#,
+					#telephone#,
+					#mobile#,
+					#managerType#,
+					#creater#,
+					SYSDATE,
+					#updater#,
+					SYSDATE,
+					#lastLogin#
+				)
+		]]>
+	</insert>
+	
+	<insert id="managerDAO.insertMngDtlApply">
+		<![CDATA[
+			INSERT
+				INTO
+					WASTE.WASTE_MNG_DTL(
+						WASTE_MNG_DTL_NO,
+						HJDONG_CD,
+						HJDONG_NM,
+						CREATER,
+						CREATION_DATE,
+						UPDATER,
+						UPDATE_DATE,
+						MANAGER_ID
+					)
+				VALUES(
+					#wasteMngDtlNo#,
+					#hjdongCd#,
+					#hjdongNm#,
+					#creater#,
+					SYSDATE,
+					#updater#,
+					SYSDATE,
+					#managerId#
+				)
+		]]>
+	</insert>
+	
+	<resultMap id="ManagerMap" class="managerVO" >
+		<result property="wasteMngNo" column="WASTE_MNG_NO" />
+		<result property="managerId" column="MANAGER_ID" />
+		<result property="managerNm" column="MANAGER_NM" />
+		<result property="password" column="PASSWORD" />
+		<result property="telephone" column="TELEPHONE" />
+		<result property="mobile" column="MOBILE" />
+		<result property="managerType" column="MANAGER_TYPE" />
+	</resultMap>
+	
+	<select id="managerDAO.selectMngView" parameterClass="managerVO" resultMap="ManagerMap">
+		<![CDATA[
+			SELECT
+				WASTE_MNG_NO,
+				MANAGER_ID,
+				MANAGER_NM,
+				PASSWORD,
+				TELEPHONE,
+				MOBILE,
+				MANAGER_TYPE,
+				CREATER,
+				CREATION_DATE,
+				UPDATER,
+				UPDATE_DATE,
+				LAST_LOGIN
+			FROM
+				WASTE.WASTE_MNG
+			WHERE
+				WASTE_MNG_NO = #wasteMngNo#
+		]]>
+	</select>
+	
+	<select id="managerDAO.selectMngDtlView" parameterClass="managerDtlVO" resultClass="egovMap">
+		<![CDATA[
+			SELECT
+				HJDONG_CD,
+				HJDONG_NM
+			FROM
+				WASTE.WASTE_MNG_DTL
+			WHERE
+				MANAGER_ID = #managerId#
+		]]>
+	</select>
+	
+	<select id="managerDAO.selectHjdongList" parameterClass="managerDtlVO" resultClass="egovMap">
+		<![CDATA[
+		SELECT
+			DISTINCT HJDONG_CD,
+			HJDONG_NM
+		FROM
+			WASTE.WASTE_MNG_DTL WASTE_MNG_DTL
+		ORDER BY
+			HJDONG_NM
+		]]>
+	</select>
+	
+	<delete id="managerDAO.deleteMngApply">
+		<![CDATA[
+		DELETE
+		FROM
+			WASTE.WASTE_MNG
+		WHERE
+			WASTE_MNG_NO = #wasteMngNo#
+		]]>
+	</delete>
+	
+	<delete id="managerDAO.deleteMngDtlApply">
+		<![CDATA[
+		DELETE
+		FROM
+			WASTE.WASTE_MNG_DTL
+		WHERE
+			MANAGER_ID = #managerId#
+		]]>
+	</delete>
+	
+	<update id="managerDAO.updateMngApply" parameterClass="managerVO">
+		UPDATE
+			WASTE.WASTE_MNG
+		SET
+			MANAGER_NM = #managerNm#,
+			TELEPHONE = #telephone#,
+			MOBILE = #mobile#,
+			MANAGER_TYPE = #managerType#,
+			UPDATER = #updater#,
+			UPDATE_DATE = SYSDATE
+		WHERE
+			WASTE_MNG_NO = #wasteMngNo#
+	</update>
+	
+</sqlMap>

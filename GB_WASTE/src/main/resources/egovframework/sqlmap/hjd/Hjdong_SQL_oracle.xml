@@ -1,0 +1,180 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://www.ibatis.com/dtd/sql-map-2.dtd">
+
+<sqlMap namespace="Hjdong">
+
+	<typeAlias  alias="egovMap" type="egovframework.rte.psl.dataaccess.util.EgovMap"/>
+	<typeAlias  alias="searchVO" type="egovframework.WASTE.cmmn.service.SearchVO"/>
+	<typeAlias  alias="hjdongVO" type="egovframework.WASTE.hjd.service.HjdongVO"/>
+
+	<select id="hjdongDAO.selectHjdongList" parameterClass="hjdongVO" resultClass="egovMap">
+		SELECT
+			*
+		FROM
+			(
+				SELECT
+					ROWNUM RNUM,
+					S.*
+				FROM
+					(
+						SELECT
+							WASTE_HJDONG_NO,
+							"OID",
+							HJDONG_NM,
+							BUNJI_1,
+							BUNJI_2,
+							BJDONG_NM,
+							CREATER,
+							TO_CHAR(CREATION_DATE, 'YYYY-MM-DD HH24:MI:SS') CREATION_DATE,
+							UPDATER,
+							TO_CHAR(UPDATE_DATE, 'YYYY-MM-DD HH24:MI:SS') UPDATE_DATE
+						FROM
+							WASTE.WASTE_HJDONG HJD
+						WHERE
+							1 = 1
+						<isNotEmpty prepend="AND" property="bjdongNm">
+							HJD.BJDONG_NM = #bjdongNm#
+						</isNotEmpty>
+						<isNotEmpty prepend="AND" property="oid">
+							HJD.OID LIKE '%'||#oid#||'%'
+						</isNotEmpty>
+						ORDER BY
+							HJD.WASTE_HJDONG_NO DESC
+					) S
+			) A
+		<![CDATA[ WHERE ROWNUM <= #recordCountPerPage# and RNUM > #firstIndex# ]]>
+	</select>
+	
+	<select id="hjdongDAO.selectHjdongListTotCnt" parameterClass="searchVO" resultClass="int">
+		SELECT
+			COUNT(*) TOTCNT
+		FROM
+			(
+				SELECT
+					ROWNUM RNUM,
+					S.*
+				FROM
+					(
+						SELECT
+							WASTE_HJDONG_NO,
+							"OID",
+							HJDONG_NM,
+							BUNJI_1,
+							BUNJI_2,
+							BJDONG_NM,
+							CREATER,
+							TO_CHAR(CREATION_DATE, 'YYYY-MM-DD HH24:MI:SS') CREATION_DATE,
+							UPDATER,
+							TO_CHAR(UPDATE_DATE, 'YYYY-MM-DD HH24:MI:SS') UPDATE_DATE
+						FROM
+							WASTE.WASTE_HJDONG HJD
+						WHERE
+							1 = 1
+						<isNotEmpty prepend="AND" property="bjdongNm">
+							HJD.BJDONG_NM = #bjdongNm#
+						</isNotEmpty>
+						<isNotEmpty prepend="AND" property="oid">
+							HJD.OID LIKE '%'||#oid#||'%'
+						</isNotEmpty>
+						ORDER BY
+							HJD.WASTE_HJDONG_NO DESC
+					) S
+			) A
+	</select>
+	 
+	<select id="hjdongDAO.selectHjdongNo" parameterClass="hjdongVO" resultClass="int">
+		<![CDATA[
+			SELECT
+				MAX( WASTE_HJDONG_NO )+ 1 AS WASTE_HJDONG_NO
+			FROM
+				WASTE.WASTE_HJDONG
+		]]>
+	</select>
+	
+	<insert id="hjdongDAO.insertHjdongApply">
+		<![CDATA[
+			INSERT
+				INTO
+					WASTE.WASTE_HJDONG(
+					WASTE_HJDONG_NO,
+					"OID",
+					HJDONG_NM,
+					BUNJI_1,
+					BUNJI_2,
+					BJDONG_NM,
+					CREATER,
+					CREATION_DATE,
+					UPDATER,
+					UPDATE_DATE
+					)
+				VALUES(
+					#wasteHjdongNo#,
+					#oid#,
+					#hjdongNm#,
+					#bunji1#,
+					#bunji2#,
+					#bjdongNm#,
+					#creater#,
+					SYSDATE,
+					#updater#,
+					SYSDATE
+				)
+		]]>
+	</insert>
+	
+	<resultMap id="HjdongMap" class="hjdongVO" >
+		<result property="wasteHjdongNo" column="WASTE_HJDONG_NO" />
+		<result property="oid" column="OID" />
+		<result property="hjdongNm" column="HJDONG_NM" />
+		<result property="bunji1" column="BUNJI_1" />
+		<result property="bunji2" column="BUNJI_2" />
+		<result property="bjdongNm" column="BJDONG_NM" />
+	</resultMap>
+	
+	<select id="hjdongDAO.selectHjdongView" parameterClass="hjdongVO" resultMap="HjdongMap">
+		<![CDATA[
+			SELECT
+				WASTE_HJDONG_NO,
+				"OID",
+				HJDONG_NM,
+				BUNJI_1,
+				BUNJI_2,
+				BJDONG_NM,
+				CREATER,
+				CREATION_DATE,
+				UPDATER,
+				UPDATE_DATE
+			FROM
+				WASTE.WASTE_HJDONG
+			WHERE
+				WASTE_HJDONG_NO = #wasteHjdongNo#
+		]]>
+	</select>
+	
+	<update id="hjdongDAO.updateHjdongApply" parameterClass="hjdongVO">
+		UPDATE
+			WASTE.WASTE_HJDONG
+		SET
+			OID = #oid#,
+			HJDONG_NM = #hjdongNm#,
+			BUNJI_1 = #bunji1#,
+			BUNJI_2 = #bunji2#,
+			BJDONG_NM = #bjdongNm#,
+			UPDATER = #updater#,
+			UPDATE_DATE = SYSDATE
+		WHERE
+			WASTE_HJDONG_NO = #wasteHjdongNo#
+	</update>
+	
+	<delete id="hjdongDAO.deleteHjdongApply">
+		<![CDATA[
+		DELETE
+		FROM
+			WASTE.WASTE_HJDONG
+		WHERE
+			WASTE_HJDONG_NO = #wasteHjdongNo#
+		]]>
+	</delete>
+	
+	
+</sqlMap>

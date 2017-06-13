@@ -1,0 +1,678 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://www.ibatis.com/dtd/sql-map-2.dtd">
+
+<sqlMap namespace="Waste">
+	<typeAlias  alias="egovMap" type="egovframework.rte.psl.dataaccess.util.EgovMap"/>
+	<typeAlias  alias="searchVO" type="egovframework.WASTE.cmmn.service.SearchVO"/>
+	<typeAlias  alias="wasteVO" type="egovframework.WASTE.wst.service.WasteVO"/>
+	<typeAlias  alias="wasteSpecVO" type="egovframework.WASTE.wst.service.WasteSpecVO"/>
+	<typeAlias  alias="hjdongVO" type="egovframework.WASTE.hjd.service.HjdongVO"/>
+	
+	<select id="wasteDAO.selectWasteList" parameterClass="wasteVO" resultClass="egovMap">
+		SELECT
+			*
+		FROM
+			(
+				SELECT
+					ROWNUM RNUM,
+					S.*,
+					(SELECT
+						LISTAGG(
+							ITEM,
+							','
+						) WITHIN GROUP(
+						ORDER BY
+							WASTE_APPLY_SPEC_NO
+						)
+					FROM
+						WASTE_APPLY_SPEC
+					WHERE
+						APPLY_NO = S.WASTE_APPLY_NO) AS ITEM
+				FROM
+					(
+						SELECT
+							WASTE_APPLY_NO,
+							OID,
+							REQUEST_NM,
+							REQ_EMAIL,
+							REQ_TELEPHONE,
+							REQ_MOBILE,
+							REQ_POST,
+							REQ_ADDR,
+							REQ_NEW_ADDR,
+							REQ_BJDONG,
+							REQ_BUNJI,
+							REQ_HJDONG,
+							ACCOUNT_NM,
+							ACC_EMAIL,
+							ACC_TELEPHONE,
+							ACC_MOBILE,
+							ACC_POST,
+							ACC_ADDR,
+							ACC_NEW_ADDR,
+							ACC_BJDONG,
+							ACC_BUNJI,
+							ACC_HJDONG,
+							DECODE(PAY_TYPE, 'card', '카드', 'other', '방문') AS PAY_TYPE,
+							TO_CHAR(PRICE, 'FM999,999,999,999,999') AS PRICE,
+							DETAIL,
+							"TRANSACTION",
+							DECODE(PAY_STATUS, 'Y', '결제', 'N', '미결제') AS PAY_STATUS,
+							DISCHARGE_DATE,
+							NVL(TO_CHAR(COLLECT_DATE, 'YYYY-MM-DD'), '미수거') AS COLLECT_DATE,
+							SHOW_RECORD,
+							SERIAL_NO,
+							MANAGER_ID,
+							USER_IP,
+							CREATER,
+							TO_CHAR(CREATION_DATE, 'YYYY-MM-DD') AS CREATION_DATE,
+							UPDATER,
+							UPDATE_DATE,
+							ROWNUM
+						FROM
+							WASTE_APPLY
+						WHERE 1=1
+						<isNotEmpty prepend="AND" property="collectDate">
+							<isEqual property="collectDate" compareValue="Y">  
+								COLLECT_DATE IS NOT NULL
+							</isEqual>
+							<isEqual property="collectDate" compareValue="N">
+								COLLECT_DATE IS NULL
+							</isEqual>
+						</isNotEmpty>
+						<isNotEmpty prepend="AND" property="payStatus">
+							PAY_STATUS = #payStatus#
+						</isNotEmpty>
+						<isNotEmpty prepend="AND" property="reqHjdong">
+							REQ_HJDONG = #reqHjdong#
+						</isNotEmpty>
+						AND TO_CHAR(CREATION_DATE, 'YYYYMMDD') BETWEEN REPLACE(#cDateF#,'-','') AND REPLACE(#cDateT#,'-','')
+						<isNotEmpty prepend="AND" property="requestNm">
+							REQUEST_NM = #requestNm#
+						</isNotEmpty>
+						<![CDATA[
+						AND SHOW_RECORD = 'Y'
+						]]>
+					) S
+			) A
+		<![CDATA[ WHERE ROWNUM <= #recordCountPerPage# and RNUM > #firstIndex# ]]>
+	</select>
+	
+	<select id="wasteDAO.selectWasteItemList" parameterClass="wasteVO" resultClass="egovMap">
+		SELECT ITEM
+		FROM WASTE.WASTE_APPLY_SPEC
+		WHERE 1=1
+		AND OID = #wasteApplyNo#
+	</select>
+	
+	<!-- <resultMap id="SumPriceMap" class="wasteVO" >
+		<result property="sumPrice" column="SUM_PRICE" />
+	</resultMap>
+	
+	<select id="wasteDAO.selectWasteSumPrice" parameterClass="wasteVO" resultClass="SumPriceMap">
+		SELECT
+				TO_CHAR(SUM(PRICE), 'FM999,999,999,999,999') AS SUM_PRICE
+			FROM
+				(
+					SELECT
+						ROWNUM RNUM,
+						S.*
+					FROM
+						(
+							SELECT
+								PRICE
+							FROM
+								WASTE_APPLY
+							WHERE 1=1
+							<isNotEmpty prepend="AND" property="collectDate">
+								<isEqual property="collectDate" compareValue="Y">  
+									COLLECT_DATE IS NOT NULL
+								</isEqual>
+								<isEqual property="collectDate" compareValue="N">
+									COLLECT_DATE IS NULL
+								</isEqual>
+							</isNotEmpty>
+							<isNotEmpty prepend="AND" property="payStatus">
+								PAY_STATUS = #payStatus#
+							</isNotEmpty>
+							<isNotEmpty prepend="AND" property="reqHjdong">
+								REQ_HJDONG = #reqHjdong#
+							</isNotEmpty>
+							AND TO_CHAR(CREATION_DATE, 'YYYYMMDD') BETWEEN REPLACE(#cDateF#,'-','') AND REPLACE(#cDateT#,'-','')
+							<isNotEmpty prepend="AND" property="requestNm">
+								REQUEST_NM = #requestNm#
+							</isNotEmpty>
+							<![CDATA[
+							AND SHOW_RECORD = 'Y'
+							]]>
+						) S
+				) A
+			<![CDATA[ WHERE ROWNUM <= #recordCountPerPage# and RNUM > #firstIndex# ]]>
+	</select> -->
+	
+	<select id="wasteDAO.selectWasteListTotCnt" parameterClass="searchVO" resultClass="int">
+		SELECT
+			COUNT(*) TOTCNT
+		FROM
+			(
+				SELECT
+					ROWNUM RNUM,
+					S.*,
+					(SELECT
+						LISTAGG(
+							ITEM,
+							','
+						) WITHIN GROUP(
+						ORDER BY
+							WASTE_APPLY_SPEC_NO
+						)
+					FROM
+						WASTE_APPLY_SPEC
+					WHERE
+						APPLY_NO = S.WASTE_APPLY_NO) AS ITEM
+				FROM
+					(
+						SELECT
+							WASTE_APPLY_NO,
+							OID,
+							REQUEST_NM,
+							REQ_EMAIL,
+							REQ_TELEPHONE,
+							REQ_MOBILE,
+							REQ_POST,
+							REQ_ADDR,
+							REQ_NEW_ADDR,
+							REQ_BJDONG,
+							REQ_BUNJI,
+							REQ_HJDONG,
+							ACCOUNT_NM,
+							ACC_EMAIL,
+							ACC_TELEPHONE,
+							ACC_MOBILE,
+							ACC_POST,
+							ACC_ADDR,
+							ACC_NEW_ADDR,
+							ACC_BJDONG,
+							ACC_BUNJI,
+							ACC_HJDONG,
+							DECODE(PAY_TYPE, 'card', '카드', 'other', '방문') AS PAY_TYPE,
+							TO_CHAR(PRICE, 'FM999,999,999,999,999') AS PRICE,
+							DETAIL,
+							"TRANSACTION",
+							DECODE(PAY_STATUS, 'Y', '결제', 'N', '미결제') AS PAY_STATUS,
+							DISCHARGE_DATE,
+							NVL(TO_CHAR(COLLECT_DATE, 'YYYY-MM-DD'), '미수거') AS COLLECT_DATE,
+							SHOW_RECORD,
+							SERIAL_NO,
+							MANAGER_ID,
+							USER_IP,
+							CREATER,
+							TO_CHAR(CREATION_DATE, 'YYYY-MM-DD') AS CREATION_DATE,
+							UPDATER,
+							UPDATE_DATE,
+							ROWNUM
+						FROM
+							WASTE_APPLY
+						WHERE 1=1
+						<isNotEmpty prepend="AND" property="collectDate">
+							<isEqual property="collectDate" compareValue="Y">  
+								COLLECT_DATE IS NOT NULL
+							</isEqual>
+							<isEqual property="collectDate" compareValue="N">
+								COLLECT_DATE IS NULL
+							</isEqual>
+						</isNotEmpty>
+						<isNotEmpty prepend="AND" property="payStatus">
+							PAY_STATUS = #payStatus#
+						</isNotEmpty>
+						<isNotEmpty prepend="AND" property="reqHjdong">
+							REQ_HJDONG = #reqHjdong#
+						</isNotEmpty>
+						AND TO_CHAR(CREATION_DATE, 'YYYYMMDD') BETWEEN REPLACE(#cDateF#,'-','') AND REPLACE(#cDateT#,'-','')
+						<isNotEmpty prepend="AND" property="requestNm">
+							REQUEST_NM = #requestNm#
+						</isNotEmpty>
+						<![CDATA[
+						AND SHOW_RECORD = 'Y'
+						]]>
+					) S
+			) A
+	</select>
+	
+	<insert id="wasteDAO.insertWasteApply">
+		<![CDATA[
+			INSERT
+				INTO
+					WASTE.WASTE_APPLY (
+						WASTE_APPLY_NO,
+						"OID",
+						REQUEST_NM,
+						REQ_EMAIL,
+						REQ_TELEPHONE,
+						REQ_MOBILE,
+						REQ_POST,
+						REQ_ADDR,
+						REQ_NEW_ADDR,
+						REQ_BJDONG,
+						REQ_BUNJI,
+						REQ_HJDONG,
+						ACCOUNT_NM,
+						ACC_EMAIL,
+						ACC_TELEPHONE,
+						ACC_MOBILE,
+						ACC_POST,
+						ACC_ADDR,
+						ACC_NEW_ADDR,
+						ACC_BJDONG,
+						ACC_BUNJI,
+						ACC_HJDONG,
+						PAY_TYPE,
+						PRICE,
+						DETAIL,
+						"TRANSACTION",
+						PAY_STATUS,
+						DISCHARGE_DATE,
+						COLLECT_DATE,
+						SHOW_RECORD,
+						SERIAL_NO,
+						MANAGER_ID,
+						USER_IP,
+						CREATER,
+						CREATION_DATE,
+						UPDATER,
+						UPDATE_DATE
+					)
+				VALUES (
+					#wasteApplyNo#,
+					#oid#,
+					#requestNm#,
+					#reqEmail#,
+					#reqTelephone#,
+					#reqMobile#,
+					#reqPost#,
+					#reqAddr#,
+					#reqNewAddr#,
+					#reqBjdong#,
+					#reqBunji#,
+					#reqHjdong#,
+					#accountNm#,
+					#accEmail#,
+					#accTelephone#,
+					#accMobile#,
+					#accPost#,
+					#accAddr#,
+					#accNewAddr#,
+					#accBjdong#,
+					#accBunji#,
+					#accHjdong#,
+					#payType#,
+					#price#,
+					#detail#,
+					#transaction#,
+					#payStatus#,
+					TO_DATE(#dischargeDate#, 'YYYY-MM-DD HH24:MI:SS'),
+					TO_DATE(#collectDate#, 'YYYY-MM-DD HH24:MI:SS'),
+					#showRecord#,
+					#serialNo#,
+					#managerId#,
+					#userIp#,
+					#creater#,
+					SYSDATE,
+					#updater#,
+					SYSDATE
+				)		  
+		]]>
+	</insert>
+	
+	<select id="wasteDAO.selectWasteApplyNo" parameterClass="wasteVO" resultClass="int">
+		<![CDATA[
+			SELECT
+				MAX( WASTE_APPLY_NO )+1 AS WASTE_APPLY_NO
+			FROM
+				WASTE.WASTE_APPLY
+		]]>
+	</select>
+	
+	<select id="wasteDAO.selectWasteApplyOid" parameterClass="wasteVO" resultClass="int">
+		<![CDATA[
+			SELECT
+				MAX( OID )+1 AS OID
+			FROM
+				WASTE.WASTE_APPLY
+		]]>
+	</select>
+	
+	<resultMap id="HjdongMap" class="hjdongVO" >
+		<result property="hjdongNm" column="HJDONG_NM" />
+		<result property="bunji1" column="BUNJI_1" />
+		<result property="bunji2" column="BUNJI_2" />
+		<result property="bjdongNm" column="BJDONG_NM" />
+	</resultMap>
+	
+	<select id="wasteDAO.selectReqHjdong" parameterClass="hjdongVO" resultMap="HjdongMap">
+		<![CDATA[
+			SELECT
+				HJDONG_NM,
+				BUNJI_1,
+				BUNJI_2,
+				BJDONG_NM
+			FROM
+				WASTE.WASTE_HJDONG
+			WHERE
+				OID = #oid#
+		]]>
+	</select>
+	
+	<insert id="wasteDAO.insertWasteSpec">
+		<![CDATA[
+			INSERT
+				INTO
+					WASTE.WASTE_APPLY_SPEC (
+						WASTE_APPLY_SPEC_NO,
+						OID,
+						ITEM,
+						SPEC,
+						PRICE,
+						AMOUNT,
+						CREATER,
+						CREATION_DATE,
+						UPDATER,
+						UPDATE_DATE,
+						APPLY_NO
+					)
+				VALUES (
+					#wasteApplySpecNo#,
+					#oid#,
+					#item#,
+					#spec#,
+					#price#,
+					#amount#,
+					#creater#,
+					SYSDATE,
+					#updater#,
+					SYSDATE,
+					#applyNo#
+				)		  
+		]]>
+	</insert>
+	
+	<resultMap id="WasteMap" class="wasteVO" >
+		<result property="wasteApplyNo" column="WASTE_APPLY_NO" />
+		<result property="oid" column="OID" />
+		<result property="requestNm" column="REQUEST_NM" />
+		<result property="reqEmail" column="REQ_EMAIL" />
+		<result property="reqTelephone" column="REQ_TELEPHONE" />
+		<result property="reqMobile" column="REQ_MOBILE" />
+		<result property="reqPost" column="REQ_POST" />
+		<result property="reqAddr" column="REQ_ADDR" />
+		<result property="reqNewAddr" column="REQ_NEW_ADDR" />
+		<result property="reqBjdong" column="REQ_BJDONG" />
+		<result property="reqBunji" column="REQ_BUNJI" />
+		<result property="reqHjdong" column="REQ_HJDONG" />
+		<result property="accountNm" column="ACCOUNT_NM" />
+		<result property="accEmail" column="ACC_EMAIL" />
+		<result property="accTelephone" column="ACC_TELEPHONE" />
+		<result property="accMobile" column="ACC_MOBILE" />
+		<result property="accPost" column="ACC_POST" />
+		<result property="accAddr" column="ACC_ADDR" />
+		<result property="accNewAddr" column="ACC_NEW_ADDR" />
+		<result property="accBjdong" column="ACC_BJDONG" />
+		<result property="accBunji" column="ACC_BUNJI" />
+		<result property="accHjdong" column="ACC_HJDONG" />
+		<result property="payType" column="PAY_TYPE" />
+		<result property="price" column="PRICE" />
+		<result property="detail" column="DETAIL" />
+		<result property="transaction" column="TRANSACTION" />
+		<result property="payStatus" column="PAY_STATUS" />
+		<result property="dischargeDate" column="DISCHARGE_DATE" />
+		<result property="collectDate" column="COLLECT_DATE" />
+		<result property="showRecord" column="SHOW_RECORD" />
+		<result property="serialNo" column="SERIAL_NO" />
+		<result property="managerId" column="MANAGER_ID" />
+		<result property="userIp" column="USER_IP" />
+		<result property="creater" column="CREATER" />
+		<result property="creationDate" column="CREATION_DATE" />
+		<result property="updater" column="UPDATER" />
+		<result property="updateDate" column="UPDATE_DATE" />
+	</resultMap>
+	
+	<select id="wasteDAO.selectWasteApplyDtl" parameterClass="wasteVO" resultMap="WasteMap">
+		<![CDATA[
+			SELECT
+				WASTE_APPLY_NO,
+				"OID",
+				REQUEST_NM,
+				REQ_EMAIL,
+				REQ_TELEPHONE,
+				REQ_MOBILE,
+				REQ_POST,
+				REQ_ADDR,
+				REQ_NEW_ADDR,
+				REQ_BJDONG,
+				REQ_BUNJI,
+				REQ_HJDONG,
+				ACCOUNT_NM,
+				ACC_EMAIL,
+				ACC_TELEPHONE,
+				ACC_MOBILE,
+				ACC_POST,
+				ACC_ADDR,
+				ACC_NEW_ADDR,
+				ACC_BJDONG,
+				ACC_BUNJI,
+				ACC_HJDONG,
+				PAY_TYPE,
+				TO_CHAR(PRICE, 'FM999,999,999,999,999') AS PRICE,
+				DETAIL,
+				"TRANSACTION",
+				PAY_STATUS,
+				TO_CHAR(DISCHARGE_DATE, 'yyyy-mm-dd') AS DISCHARGE_DATE,
+				TO_CHAR(COLLECT_DATE, 'yyyy-mm-dd') AS COLLECT_DATE,
+				SHOW_RECORD,
+				SERIAL_NO,
+				MANAGER_ID,
+				USER_IP,
+				CREATER,
+				CREATION_DATE,
+				UPDATER,
+				UPDATE_DATE
+			FROM
+				WASTE.WASTE_APPLY
+			WHERE
+				WASTE_APPLY_NO = #wasteApplyNo#
+			AND
+				OID = #oid#
+		]]>
+	</select>
+	
+	<select id="wasteDAO.selectWasteSpecList" parameterClass="wasteSpecVO" resultClass="egovMap">
+			SELECT
+				*
+			FROM
+				(
+					SELECT
+						ROWNUM RNUM,
+						S.*
+					FROM
+						(
+							SELECT
+								WASTE_APPLY_SPEC_NO,
+								"OID",
+								ITEM,
+								SPEC,
+								TO_CHAR(PRICE, 'FM999,999,999,999,999') AS PRICE,
+								AMOUNT,
+								CREATER,
+								CREATION_DATE,
+								UPDATER,
+								UPDATE_DATE,
+								APPLY_NO
+							FROM
+								WASTE.WASTE_APPLY_SPEC
+							WHERE 1=1
+							<isNotEmpty prepend="AND" property="applyNo">
+								APPLY_NO = #applyNo#
+							</isNotEmpty>
+							<!-- <isNotEmpty prepend="AND" property="oid">
+								OID = #oid#
+							</isNotEmpty>	 -->					
+						) S
+					ORDER BY
+						RNUM ASC
+				) A
+	</select>
+	
+	<update id="wasteDAO.updateWasteApply" parameterClass="wasteVO">
+		UPDATE
+			WASTE.WASTE_APPLY
+		SET
+			REQUEST_NM = #requestNm#,
+			REQ_EMAIL = #reqEmail#,
+			REQ_TELEPHONE = #reqTelephone#,
+			REQ_MOBILE = #reqMobile#,
+			REQ_POST = #reqPost#,
+			REQ_ADDR = #reqAddr#,
+			REQ_NEW_ADDR = #reqNewAddr#,
+			REQ_BJDONG = #reqBjdong#,
+			REQ_BUNJI = #reqBunji#,
+			REQ_HJDONG = #reqHjdong#,
+			ACCOUNT_NM = #accountNm#,
+			ACC_EMAIL = #accEmail#,
+			ACC_TELEPHONE = #accTelephone#,
+			ACC_MOBILE = #accMobile#,
+			ACC_POST = #accPost#,
+			ACC_ADDR = #accAddr#,
+			ACC_NEW_ADDR = #accNewAddr#,
+			ACC_BJDONG = #accBjdong#,
+			ACC_BUNJI = #accBunji#,
+			ACC_HJDONG = #accHjdong#,
+			PRICE = #price#,
+			DETAIL = #detail#,
+			<isNotEmpty property="payStatus">
+				PAY_STATUS = #payStatus#,
+			</isNotEmpty>
+			DISCHARGE_DATE = TO_DATE(#dischargeDate#, 'YYYY-MM-DD HH24:MI:SS'),
+			COLLECT_DATE = TO_DATE(#collectDate#, 'YYYY-MM-DD HH24:MI:SS'),
+			MANAGER_ID = #managerId#,
+			USER_IP = #userIp#,
+			UPDATE_DATE = SYSDATE
+		WHERE
+			WASTE_APPLY_NO = #wasteApplyNo#
+		AND
+			"OID" = #oid#
+	</update>
+	
+	<delete id="wasteDAO.deleteWasteApplySpec">
+		<![CDATA[
+		DELETE
+		FROM
+			WASTE.WASTE_APPLY_SPEC
+		WHERE
+			APPLY_NO = #applyNo#
+			AND "OID" = #oid#
+		]]>
+	</delete>
+	
+	<delete id="wasteDAO.deleteWasteApply">
+		<![CDATA[
+		DELETE
+		FROM
+			WASTE.WASTE_APPLY
+		WHERE
+			WASTE_APPLY_NO = #wasteApplyNo#
+			AND "OID" = #oid#
+		]]>
+	</delete>
+	
+	<!-- <select id="managerDAO.selectManagerDtlList" parameterClass="managerDtlVO" resultClass="egovMap">
+			SELECT
+				HJDONG_NM
+			FROM
+				WASTE_MNG_DTL
+			WHERE
+				MANAGER_ID = #managerId#
+	</select> -->
+	
+	<!-- <select id="managerDAO.selectManagerListTotCnt" parameterClass="searchVO" resultClass="int">
+			SELECT COUNT(*) TOTCNT
+			FROM WASTE_MNG
+	</select> -->
+
+	<!-- <insert id="sampleDAO.insertSample_S">
+		<![CDATA[
+			INSERT INTO SAMPLE 
+				( ID
+				  , NAME
+				  , DESCRIPTION
+				  , USE_YN
+				  , REG_USER )
+			VALUES ( #id#
+				  , #name#
+				  , #description#
+				  , #useYn#
+				  , #regUser# )
+		]]>
+	</insert>
+	
+	<update id="sampleDAO.updateSample_S">
+		<![CDATA[
+			UPDATE SAMPLE 
+			SET ID=#id#
+				, NAME=#name#
+				, DESCRIPTION=#description#
+				, USE_YN=#useYn#
+			WHERE ID=#id#
+		]]>
+	</update>
+	
+	<delete id="sampleDAO.deleteSample_S">
+		<![CDATA[
+			DELETE FROM SAMPLE 
+			WHERE ID=#id#
+		]]>
+	</delete>
+	
+	<select id="sampleDAO.selectSample_S" resultMap="sample">
+		<![CDATA[
+			SELECT
+				ID, NAME, DESCRIPTION, USE_YN, REG_USER
+			FROM SAMPLE 
+			WHERE ID=#id#
+		]]>
+	</select>
+	
+	<select id="sampleDAO.selectSampleList_D" parameterClass="searchVO" resultClass="egovMap">
+	       SELECT A.ID, A.NAME, A.DESCRIPTION, A.USE_YN, A.REG_USER
+	       FROM (
+		       SELECT  ROWNUM RNUM, S.*
+			   FROM (
+					SELECT
+						ID, NAME, DESCRIPTION, USE_YN, REG_USER, ROWNUM
+					FROM SAMPLE
+					WHERE 1=1
+					<isEqual prepend="AND" property="searchCondition" compareValue="0">
+						ID = #searchKeyword#
+					</isEqual>
+					<isEqual prepend="AND" property="searchCondition" compareValue="1">
+						NAME LIKE '%' || #searchKeyword# || '%'
+					</isEqual>
+					ORDER BY ID DESC
+				) S
+			 ) A
+		<![CDATA[ WHERE ROWNUM <= #recordCountPerPage# and RNUM > #firstIndex# ]]>
+	</select>
+	
+	<select id="sampleDAO.selectSampleListTotCnt_S" parameterClass="searchVO" resultClass="int">
+
+			SELECT COUNT(*) totcnt
+			FROM SAMPLE
+			WHERE 1=1
+			<isEqual prepend="AND" property="searchCondition" compareValue="0">
+				ID = #searchKeyword#
+			</isEqual>
+			<isEqual prepend="AND" property="searchCondition" compareValue="1">
+				NAME LIKE '%' || #searchKeyword# || '%'
+			</isEqual>
+	</select> -->
+
+</sqlMap>
